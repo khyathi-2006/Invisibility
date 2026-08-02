@@ -1,61 +1,93 @@
 import {
     FilesetResolver,
     HandLandmarker
-} from "@mediapipe/tasks-vision";
+}
+from
+"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22";
 
 
-let handLandmarker;
+
+let handDetector = null;
 
 
-/*
-    Initialize MediaPipe Hands
-*/
+
 export async function initializeHands(){
 
+
     const vision =
-        await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
-        );
+    await FilesetResolver.forVisionTasks(
+
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
+
+    );
 
 
-    handLandmarker =
-        await HandLandmarker.createFromOptions(
-            vision,
-            {
-                baseOptions:{
-                    modelAssetPath:
-                    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task"
-                },
 
-                runningMode:"VIDEO",
+    handDetector =
+    await HandLandmarker.createFromOptions(
 
-                numHands:2
-            }
-        );
+        vision,
+
+        {
+
+            baseOptions:{
+
+                modelAssetPath:
+
+                "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+
+            },
 
 
-    return handLandmarker;
+            runningMode:"VIDEO",
+
+
+            numHands:2
+
+
+        }
+
+    );
+
+
+
+    console.log(
+        "MediaPipe Hands Ready"
+    );
+
+
+
+    return handDetector;
+
 
 }
 
 
 
-/*
-    Detect pinch gesture
 
-    Thumb tip  -> landmark 4
-    Index tip  -> landmark 8
-*/
+
+
+
 export async function detectGesture(
     hands,
     video
 ){
 
+
+    if(!hands)
+        return "";
+
+
+
     const result =
-        hands.detectForVideo(
-            video,
-            performance.now()
-        );
+    hands.detectForVideo(
+
+        video,
+
+        performance.now()
+
+    );
+
 
 
     if(
@@ -63,51 +95,55 @@ export async function detectGesture(
         result.landmarks.length===0
     ){
 
-        return null;
+        return "";
 
     }
 
 
 
-    for(
-        const hand of result.landmarks
-    ){
-
-        const thumb =
-            hand[4];
-
-        const index =
-            hand[8];
-
-
-        const distance =
-            Math.sqrt(
-                Math.pow(
-                    thumb.x-index.x,
-                    2
-                )
-                +
-                Math.pow(
-                    thumb.y-index.y,
-                    2
-                )
-            );
+    const hand =
+    result.landmarks[0];
 
 
 
-        /*
-            Pinch detected
-        */
+    const thumb =
+    hand[4];
 
-        if(distance < 0.05){
 
-            return "pinch";
+    const index =
+    hand[8];
 
-        }
+
+
+    const distance =
+
+    Math.sqrt(
+
+        Math.pow(
+            thumb.x-index.x,
+            2
+        )
+
+        +
+
+        Math.pow(
+            thumb.y-index.y,
+            2
+        )
+
+    );
+
+
+
+    if(distance < 0.05){
+
+        return "pinch";
 
     }
 
 
-    return null;
+
+    return "";
+
 
 }

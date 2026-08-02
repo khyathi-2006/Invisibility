@@ -1,99 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Ghost / Invisibility Mode</title>
+
 
     <link rel="stylesheet" href="style.css">
 
-    <script type="module" src="app.js" defer></script>
+
+    <script 
+        type="module" 
+        src="app.js" 
+        defer>
+    </script>
+
 </head>
+
 
 <body>
 
+
 <div class="container">
 
+
     <header>
-        <h1>👻 Ghost / Invisibility Mode</h1>
+
+        <h1>
+            👻 Ghost / Invisibility Mode
+        </h1>
+
+
         <p>
             AI-powered real-time invisibility using MediaPipe
         </p>
+
     </header>
+
+
+
+
 
     <div class="video-container">
 
-        <!-- Hidden webcam -->
+
+        <!-- Webcam input (hidden) -->
         <video
+
             id="video"
+
             autoplay
+
             playsinline
-            muted>
+
+            muted
+
+            style="display:none">
+
         </video>
 
-        <!-- Output canvas -->
-        <canvas id="canvas"></canvas>
+
+
+
+        <!-- Processed output -->
+        <canvas
+
+            id="canvas">
+
+        </canvas>
+
 
     </div>
+
+
+
+
+
+
 
     <div class="controls">
 
+
         <button id="startBtn">
+
             Start Camera
+
         </button>
+
+
 
         <button id="captureBtn">
+
             Capture Background
+
         </button>
+
+
 
         <button id="screenshotBtn">
+
             Screenshot
+
         </button>
 
+
     </div>
+
+
+
+
+
+
+
 
     <div class="status">
 
-        <div>
-            Status:
-            <span id="statusText">
-                Waiting...
-            </span>
-        </div>
 
         <div>
-            FPS:
-            <span id="fps">
-                0
+
+            Status:
+
+            <span id="statusText">
+
+                Waiting...
+
             </span>
+
         </div>
+
+
+
+        <div>
+
+            FPS:
+
+            <span id="fps">
+
+                0
+
+            </span>
+
+        </div>
+
 
     </div>
 
+
+
+
+
+
+
+
     <section class="instructions">
 
-        <h2>Instructions</h2>
+
+        <h2>
+            Instructions
+        </h2>
+
+
 
         <ol>
 
-            <li>Click <b>Start Camera</b>.</li>
-
-            <li>Stand away from the camera.</li>
-
-            <li>Click <b>Capture Background</b>.</li>
-
-            <li>Move back into the frame.</li>
 
             <li>
-                Pinch your thumb and index finger to
-                toggle invisibility.
+                Click <b>Start Camera</b>.
             </li>
+
+
+            <li>
+                Allow camera permission.
+            </li>
+
+
+            <li>
+                Wait until status shows 
+                <b>Camera running</b>.
+            </li>
+
+
+            <li>
+                Stand in front of the camera.
+            </li>
+
+
+            <li>
+                Click <b>Capture Background</b>.
+            </li>
+
+
+            <li>
+                Move into the captured area.
+            </li>
+
+
+            <li>
+                Pinch thumb and index finger to toggle invisibility.
+            </li>
+
 
         </ol>
 
+
     </section>
+
+
+
 
 </div>
 
+
 </body>
+
 </html>

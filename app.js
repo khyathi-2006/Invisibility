@@ -151,12 +151,18 @@ async function render() {
 
         const maskResult = await detectPerson(segmentation, video);
 
-if (maskResult) {
-    console.log(maskResult.width, maskResult.height);
-    console.log(maskResult.data.length);
+if (!maskResult) {
+    requestAnimationFrame(render);
+    return;
 }
 
-        const gesture = await detectGesture(hands, video);
+const mask = maskResult.data;
+const maskWidth = maskResult.width;
+const maskHeight = maskResult.height;
+
+console.log("Mask:", maskWidth, maskHeight);
+
+const gesture = await detectGesture(hands, video);
 
         // Toggle invisibility using pinch
         if (
@@ -177,25 +183,35 @@ if (maskResult) {
 
         lastGesture = gesture;
 
-        if (invisible && backgroundImage && mask) {
+        if (invisible && backgroundImage) {
 
-            for (let i = 0; i < frame.data.length; i += 4) {
+    for (let y = 0; y < canvas.height; y++) {
 
-                if (mask[i / 4] > 0.5) {
+        for (let x = 0; x < canvas.width; x++) {
 
-                    frame.data[i] = backgroundImage.data[i];
-                    frame.data[i + 1] = backgroundImage.data[i + 1];
-                    frame.data[i + 2] = backgroundImage.data[i + 2];
+            const frameIndex = (y * canvas.width + x) * 4;
 
-                }
+            const maskX = Math.floor(x * maskWidth / canvas.width);
+            const maskY = Math.floor(y * maskHeight / canvas.height);
+
+            const maskIndex = maskY * maskWidth + maskX;
+
+            if (mask[maskIndex] === 1) {
+
+                frame.data[frameIndex] = backgroundImage.data[frameIndex];
+                frame.data[frameIndex + 1] = backgroundImage.data[frameIndex + 1];
+                frame.data[frameIndex + 2] = backgroundImage.data[frameIndex + 2];
 
             }
 
-            ctx.putImageData(frame, 0, 0);
+        }
 
-            statusText.textContent = "Invisible Mode ON";
+    }
 
-        } else {
+    ctx.putImageData(frame, 0, 0);
+
+    statusText.textContent = "Invisible Mode ON";
+} else {
 
             if (backgroundImage) {
                 statusText.textContent = "Ready";

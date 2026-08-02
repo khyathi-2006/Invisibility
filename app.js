@@ -2,22 +2,12 @@ import { initializeSegmentation, detectPerson } from "./segmentation.js";
 import { initializeHands, detectGesture } from "./gesture.js";
 
 
-
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-
-
-const startBtn = document.getElementById("startBtn");
-const captureBtn = document.getElementById("captureBtn");
-const screenshotBtn = document.getElementById("screenshotBtn");
-
-
-
 const statusText = document.getElementById("statusText");
 const fpsText = document.getElementById("fps");
-
 
 
 let stream = null;
@@ -569,36 +559,28 @@ function screenshot(){
 
 
 
-
-
-
-
 // ============================
 // BUTTON EVENTS
 // ============================
 
+window.addEventListener("DOMContentLoaded", () => {
+    console.log("APP.JS LOADED");
 
-console.log(
-    "APP.JS LOADED"
-);
+    const startBtn = document.getElementById("startBtn");
+    const captureBtn = document.getElementById("captureBtn");
+    const screenshotBtn = document.getElementById("screenshotBtn");
 
+    if (!startBtn || !captureBtn || !screenshotBtn) {
+        console.error("Buttons not found.");
+        return;
+    }
 
+    startBtn.addEventListener("click", async () => {
+        if (running) return;
+        await startCamera();
+    });
 
-startBtn.addEventListener(
-    "click",
-    startCamera
-);
+    captureBtn.addEventListener("click", captureBackground);
 
-
-
-captureBtn.addEventListener(
-    "click",
-    captureBackground
-);
-
-
-
-screenshotBtn.addEventListener(
-    "click",
-    screenshot
-);
+    screenshotBtn.addEventListener("click", screenshot);
+});

@@ -31,7 +31,6 @@ let frames = 0;
 let fps = 0;
 
 
-
 /*
     Start webcam
 */
@@ -132,21 +131,21 @@ async function startCamera(){
     }
     catch(error){
 
-        console.error(
-            "FULL CAMERA ERROR:",
-            error
+        console.log("Camera error object:", error);
+
+        console.log(
+            "Camera error JSON:",
+            JSON.stringify(error)
         );
 
 
         statusText.textContent =
             "Camera Error: " +
-            (error.name || "Unknown") +
-            " - " +
-            (error.message || "No details");
+            String(error);
 
     }
 
-}   // <-- THIS WAS MISSING
+}
 
 
 

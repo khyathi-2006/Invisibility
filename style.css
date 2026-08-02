@@ -2,124 +2,316 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Arial,Helvetica,sans-serif;
+    font-family:Arial, Helvetica, sans-serif;
 }
+
 
 body{
+
     background:#0f172a;
-    color:#fff;
+
+    color:white;
+
     min-height:100vh;
+
     display:flex;
+
     justify-content:center;
+
     align-items:center;
+
     padding:30px;
+
 }
+
+
 
 .container{
+
     width:100%;
+
     max-width:1200px;
+
 }
+
+
+
 
 header{
+
     text-align:center;
+
     margin-bottom:25px;
+
 }
+
+
 
 header h1{
+
     font-size:2.5rem;
+
     margin-bottom:10px;
+
 }
+
+
 
 header p{
+
     color:#cbd5e1;
+
     font-size:1rem;
+
 }
+
+
+
+
 
 .video-container{
+
     position:relative;
+
     width:100%;
+
     max-width:960px;
+
     margin:auto;
+
     border-radius:18px;
+
     overflow:hidden;
+
     background:#000;
+
     border:2px solid #334155;
+
 }
 
-video{
+
+
+
+
+/*
+    Webcam source
+    Hidden visually but still available
+    for MediaPipe processing
+*/
+
+
+#video{
+
     display:none;
+
 }
 
-canvas{
+
+
+
+
+/*
+    AI processed output
+*/
+
+
+#canvas{
+
     width:100%;
+
+    height:auto;
+
     display:block;
+
+    background:#000;
+
 }
+
+
+
+
 
 .controls{
+
     display:flex;
+
     justify-content:center;
+
     flex-wrap:wrap;
+
     gap:15px;
+
     margin-top:25px;
+
 }
+
+
+
+
 
 button{
+
     padding:14px 28px;
+
     border:none;
+
     border-radius:10px;
+
     cursor:pointer;
+
     background:#2563eb;
+
     color:white;
+
     font-size:16px;
-    transition:.25s;
+
+    transition:0.25s;
+
 }
+
+
 
 button:hover{
+
     background:#1d4ed8;
+
     transform:translateY(-2px);
+
 }
+
+
+
+button:active{
+
+    transform:scale(0.98);
+
+}
+
+
+
+
 
 .status{
+
     display:flex;
+
     justify-content:space-between;
+
     margin-top:25px;
+
     background:#1e293b;
+
     padding:15px;
+
     border-radius:12px;
+
+    font-size:16px;
+
 }
+
+
+
+
+
+#statusText{
+
+    color:#38bdf8;
+
+}
+
+
+
+
+
+#fps{
+
+    color:#22c55e;
+
+}
+
+
+
+
 
 .instructions{
+
     margin-top:30px;
+
     background:#1e293b;
+
     padding:20px;
+
     border-radius:12px;
+
 }
+
+
+
+
 
 .instructions h2{
+
     margin-bottom:15px;
+
 }
+
+
+
+
 
 .instructions ol{
+
     padding-left:20px;
+
 }
 
+
+
+
+
 .instructions li{
+
     margin-bottom:10px;
+
 }
+
+
+
+
 
 @media(max-width:768px){
 
-    header h1{
-        font-size:2rem;
+
+    body{
+
+        padding:15px;
+
     }
+
+
+    header h1{
+
+        font-size:2rem;
+
+    }
+
+
 
     .status{
+
         flex-direction:column;
+
         gap:10px;
+
     }
 
+
+
     button{
+
         width:100%;
+
     }
+
 
 }

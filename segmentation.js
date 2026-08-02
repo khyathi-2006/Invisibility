@@ -34,16 +34,23 @@ export async function detectPerson(segmenter, video) {
   }
 
   try {
-    const result = segmenter.segmentForVideo(
-      video,
-      performance.now()
-    );
+    const result = segmenter.segmentForVideo(video, performance.now());
 
     if (!result || !result.categoryMask) {
       return null;
     }
 
-    return result.categoryMask.getAsFloat32Array();
+    const mask = result.categoryMask;
+
+    console.log("Mask width:", mask.width);
+    console.log("Mask height:", mask.height);
+
+    return {
+      data: mask.getAsFloat32Array(),
+      width: mask.width,
+      height: mask.height
+    };
+
   } catch (error) {
     console.error("Segmentation Error:", error);
     return null;

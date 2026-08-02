@@ -149,7 +149,12 @@ async function render() {
             canvas.height
         );
 
-        const mask = await detectPerson(segmentation, video);
+        const maskResult = await detectPerson(segmentation, video);
+
+if (maskResult) {
+    console.log(maskResult.width, maskResult.height);
+    console.log(maskResult.data.length);
+}
 
         const gesture = await detectGesture(hands, video);
 

@@ -26,29 +26,26 @@ let segmentation = null;
 let hands = null;
 
 
-let lastTime = performance.now();
 let frames = 0;
+let lastTime = performance.now();
 
 
-let lastGesture = "";
-let gestureCooldown = false;
+let previousGesture = "";
+let gestureLock = false;
 
 
 
-// ==========================
+// ===============================
 // START CAMERA
-// ==========================
+// ===============================
 
 async function startCamera(){
-
-    if(running){
-        return;
-    }
 
 
     try{
 
-        console.log("STEP 1: Checking camera");
+
+        console.log("STEP 1: Camera check");
 
 
         if(!navigator.mediaDevices){
@@ -60,11 +57,6 @@ async function startCamera(){
         }
 
 
-        console.log(
-            "Secure Context:",
-            window.isSecureContext
-        );
-
 
         statusText.textContent =
             "Requesting camera permission...";
@@ -75,6 +67,7 @@ async function startCamera(){
         await navigator.mediaDevices.getUserMedia({
 
             video:{
+
                 width:{
                     ideal:1280
                 },
@@ -84,6 +77,7 @@ async function startCamera(){
                 },
 
                 facingMode:"user"
+
             },
 
             audio:false
@@ -102,15 +96,40 @@ async function startCamera(){
 
 
 
-        await new Promise((resolve)=>{
+        await new Promise(
+            (resolve,reject)=>{
 
-            video.onloadedmetadata = ()=>{
 
-                resolve();
+                video.onloadedmetadata = ()=>{
 
-            };
 
-        });
+                    console.log(
+                        "Video metadata loaded"
+                    );
+
+
+                    resolve();
+
+
+                };
+
+
+
+                video.onerror = ()=>{
+
+
+                    reject(
+                        new Error(
+                            "Video loading failed"
+                        )
+                    );
+
+
+                };
+
+
+            }
+        );
 
 
 
@@ -135,7 +154,6 @@ async function startCamera(){
 
 
 
-
         statusText.textContent =
             "Loading AI models...";
 
@@ -144,6 +162,7 @@ async function startCamera(){
         console.log(
             "STEP 4: Loading segmentation"
         );
+
 
 
         segmentation =
@@ -180,6 +199,7 @@ async function startCamera(){
         render();
 
 
+
     }
 
 
@@ -187,22 +207,27 @@ async function startCamera(){
 
 
         console.error(
-            "Camera Error:",
+            "CAMERA ERROR:",
             error
         );
 
 
         statusText.textContent =
             "Camera Error: " +
-            String(error);
-
+            (
+                error.message ||
+                error.name ||
+                String(error)
+            );
 
 
         if(stream){
 
             stream
             .getTracks()
-            .forEach(track=>track.stop());
+            .forEach(
+                track=>track.stop()
+            );
 
         }
 
@@ -213,17 +238,20 @@ async function startCamera(){
 
 
 
-// ==========================
+
+// ===============================
 // CAPTURE BACKGROUND
-// ==========================
+// ===============================
 
 function captureBackground(){
 
 
     if(!running){
 
+
         statusText.textContent =
             "Start camera first";
+
 
         return;
 
@@ -233,6 +261,7 @@ function captureBackground(){
 
     const temp =
         document.createElement("canvas");
+
 
 
     temp.width =
@@ -288,9 +317,11 @@ function captureBackground(){
 
 
 
-// ==========================
-// RENDER LOOP
-// ==========================
+
+
+// ===============================
+// MAIN AI LOOP
+// ===============================
 
 async function render(){
 
@@ -310,7 +341,6 @@ async function render(){
 
 
 
-
     ctx.drawImage(
 
         video,
@@ -327,23 +357,22 @@ async function render(){
 
 
 
-    const frame =
-        ctx.getImageData(
-
-            0,
-
-            0,
-
-            canvas.width,
-
-            canvas.height
-
-        );
-
-
-
-
     try{
+
+
+        let frame =
+            ctx.getImageData(
+
+                0,
+
+                0,
+
+                canvas.width,
+
+                canvas.height
+
+            );
+
 
 
         const mask =
@@ -369,10 +398,15 @@ async function render(){
 
 
 
+
         if(
+
             gesture === "pinch" &&
-            lastGesture !== "pinch" &&
-            !gestureCooldown
+
+            previousGesture !== "pinch" &&
+
+            !gestureLock
+
         ){
 
 
@@ -381,12 +415,13 @@ async function render(){
 
 
 
-            gestureCooldown = true;
+            gestureLock = true;
+
 
 
             setTimeout(()=>{
 
-                gestureCooldown = false;
+                gestureLock = false;
 
             },1000);
 
@@ -395,15 +430,21 @@ async function render(){
 
 
 
-        lastGesture =
+        previousGesture =
             gesture;
 
 
 
+
+
         if(
+
             invisible &&
+
             backgroundImage &&
+
             mask
+
         ){
 
 
@@ -418,6 +459,7 @@ async function render(){
             );
 
 
+
             ctx.putImageData(
 
                 frame,
@@ -429,11 +471,13 @@ async function render(){
             );
 
 
+
             statusText.textContent =
                 "Invisible Mode ON";
 
 
         }
+
 
         else{
 
@@ -450,17 +494,19 @@ async function render(){
 
     catch(error){
 
+
         console.error(
-            "Processing error:",
+            "AI LOOP ERROR:",
             error
         );
+
 
     }
 
 
 
+    updateFPS();
 
-    calculateFPS();
 
 
     requestAnimationFrame(render);
@@ -470,9 +516,13 @@ async function render(){
 
 
 
-// ==========================
+
+
+
+
+// ===============================
 // INVISIBILITY EFFECT
-// ==========================
+// ===============================
 
 function applyInvisibility(
     frame,
@@ -491,9 +541,9 @@ function applyInvisibility(
 
 
     for(
-        let i=0;
-        i<data.length;
-        i+=4
+        let i = 0;
+        i < data.length;
+        i += 4
     ){
 
 
@@ -527,29 +577,29 @@ function applyInvisibility(
 
 
 
-// ==========================
-// FPS
-// ==========================
 
-function calculateFPS(){
+
+
+// ===============================
+// FPS
+// ===============================
+
+function updateFPS(){
 
 
     frames++;
 
 
-    const now =
+    let now =
         performance.now();
 
 
 
-    if(
-        now-lastTime >=1000
-    ){
+    if(now-lastTime >=1000){
 
 
         fpsText.textContent =
             frames;
-
 
 
         frames = 0;
@@ -565,9 +615,11 @@ function calculateFPS(){
 
 
 
-// ==========================
+
+
+// ===============================
 // SCREENSHOT
-// ==========================
+// ===============================
 
 function screenshot(){
 
@@ -576,17 +628,14 @@ function screenshot(){
         document.createElement("a");
 
 
-
     link.download =
         "ghost-screenshot.png";
-
 
 
     link.href =
         canvas.toDataURL(
             "image/png"
         );
-
 
 
     link.click();
@@ -597,23 +646,19 @@ function screenshot(){
 
 
 
-// ==========================
-// BUTTON EVENTS
-// ==========================
-
-startBtn.addEventListener(
-    "click",
-    startCamera
-);
 
 
-captureBtn.addEventListener(
-    "click",
-    captureBackground
-);
+// ===============================
+// BUTTONS
+// ===============================
+
+startBtn.onclick =
+    startCamera;
 
 
-screenshotBtn.addEventListener(
-    "click",
-    screenshot
-);
+captureBtn.onclick =
+    captureBackground;
+
+
+screenshotBtn.onclick =
+    screenshot;

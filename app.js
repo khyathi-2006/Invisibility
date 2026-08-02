@@ -256,8 +256,7 @@ function captureBackground(){
 
 
 
-    statusText.textContent =
-        "Background captured";
+    statusText.textContent = "Normal Mode";
 
 
 }
@@ -445,39 +444,29 @@ async function render(){
         }
 
 
-        else{
-
-
-            statusText.textContent =
-                "Normal Mode";
-
-
-        }
+        else {
+    if (backgroundImage) {
+        statusText.textContent = "Ready";
+    } else {
+        statusText.textContent = "Camera running";
+    }
+}
 
 
 
     }
 
 
-    catch(error){
-
-
-        console.error(
-            "Processing error",
-            error
-        );
-
-
-    }
-
-
-
+    try {
+    // existing processing code
+}
+catch (error) {
+    console.error("Processing error", error);
+}
+finally {
     updateFPS();
-
-
-
     requestAnimationFrame(render);
-
+}
 
 
 }

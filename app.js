@@ -16,59 +16,96 @@ const statusText = document.getElementById("statusText");
 const fpsText = document.getElementById("fps");
 
 
-let stream;
+let stream = null;
 let running = false;
 
 let backgroundImage = null;
 let invisible = false;
 
-let segmentation;
-let hands;
+let segmentation = null;
+let hands = null;
 
 
 let lastTime = performance.now();
 let frames = 0;
-let fps = 0;
+
+let lastGestureTime = 0;
+
 
 
 /*
-    Start webcam
+    Start Camera
 */
 async function startCamera(){
 
-    if(!navigator.mediaDevices){
+
+    if(running){
+
+        console.log("Camera already running");
+        return;
+
+    }
+
+
+
+    if(!navigator.mediaDevices ||
+       !navigator.mediaDevices.getUserMedia){
+
 
         statusText.textContent =
-            "Browser does not support camera";
+            "Camera API not supported";
+
 
         return;
 
     }
 
 
+
     try{
+
+
+        console.log("STEP 1: Starting camera");
+
 
         statusText.textContent =
             "Requesting camera access...";
 
 
-        stream = await navigator.mediaDevices.getUserMedia({
 
-            video:{
-                facingMode:"user",
+        video.setAttribute(
+            "playsinline",
+            true
+        );
 
-                width:{
-                    ideal:1280
+
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video:{
+
+                    facingMode:"user",
+
+                    width:{
+                        ideal:1280
+                    },
+
+                    height:{
+                        ideal:720
+                    }
+
                 },
 
-                height:{
-                    ideal:720
-                }
-            },
+                audio:false
 
-            audio:false
+            });
 
-        });
+
+
+        console.log(
+            "STEP 2: Camera permission granted"
+        );
 
 
 
@@ -78,17 +115,27 @@ async function startCamera(){
 
         await new Promise((resolve)=>{
 
+
             video.onloadedmetadata = ()=>{
 
                 resolve();
 
             };
 
+
         });
 
 
 
         await video.play();
+
+
+
+        console.log(
+            "STEP 3: Video started",
+            video.videoWidth,
+            video.videoHeight
+        );
 
 
 
@@ -101,8 +148,15 @@ async function startCamera(){
 
 
 
+
         statusText.textContent =
             "Loading AI models...";
+
+
+
+        console.log(
+            "STEP 4: Loading segmentation"
+        );
 
 
 
@@ -111,8 +165,20 @@ async function startCamera(){
 
 
 
+        console.log(
+            "STEP 5: Segmentation loaded"
+        );
+
+
+
         hands =
             await initializeHands();
+
+
+
+        console.log(
+            "STEP 6: Hands loaded"
+        );
 
 
 
@@ -128,39 +194,87 @@ async function startCamera(){
         render();
 
 
+
     }
+
     catch(error){
 
-        console.log("Camera error object:", error);
 
-        console.log(
-            "Camera error JSON:",
-            JSON.stringify(error)
+        console.error(
+            "CAMERA ERROR:",
+            error
         );
 
 
-        statusText.textContent =
-            "Camera Error: " +
-            String(error);
+
+        console.error(
+            error.name,
+            error.message
+        );
+
+
+
+        if(error.name === "NotAllowedError"){
+
+
+            statusText.textContent =
+                "Camera permission denied";
+
+
+        }
+        else if(error.name === "NotFoundError"){
+
+
+            statusText.textContent =
+                "Camera not found";
+
+
+        }
+        else if(error.name === "NotReadableError"){
+
+
+            statusText.textContent =
+                "Camera already in use";
+
+
+        }
+        else{
+
+
+            statusText.textContent =
+                "Camera Error: " +
+                error.message;
+
+
+        }
+
 
     }
+
 
 }
 
 
 
+
+
+
+
 /*
-    Capture background
+    Capture Background
 */
 function captureBackground(){
 
 
     if(!running){
 
+
         statusText.textContent =
             "Start camera first";
 
+
         return;
+
 
     }
 
@@ -170,8 +284,10 @@ function captureBackground(){
         document.createElement("canvas");
 
 
+
     temp.width =
         canvas.width;
+
 
 
     temp.height =
@@ -192,9 +308,9 @@ function captureBackground(){
 
         0,
 
-        temp.width,
+        canvas.width,
 
-        temp.height
+        canvas.height
 
     );
 
@@ -207,9 +323,9 @@ function captureBackground(){
 
             0,
 
-            temp.width,
+            canvas.width,
 
-            temp.height
+            canvas.height
 
         );
 
@@ -225,8 +341,11 @@ function captureBackground(){
 
 
 
+
+
+
 /*
-    Main rendering loop
+    Render Loop
 */
 async function render(){
 
@@ -238,11 +357,14 @@ async function render(){
 
     if(video.readyState < 2){
 
+
         requestAnimationFrame(render);
 
         return;
 
+
     }
+
 
 
 
@@ -259,7 +381,6 @@ async function render(){
         canvas.height
 
     );
-
 
 
 
@@ -290,7 +411,6 @@ async function render(){
 
 
 
-
     const gesture =
         await detectGesture(
 
@@ -303,16 +423,35 @@ async function render(){
 
 
 
-    if(gesture === "pinch"){
+    const now =
+        Date.now();
 
-        invisible = !invisible;
+
+
+    if(
+        gesture === "pinch" &&
+        now - lastGestureTime > 1000
+    ){
+
+
+        invisible =
+            !invisible;
+
+
+        lastGestureTime =
+            now;
+
 
     }
 
 
 
 
-    if(invisible && backgroundImage){
+    if(
+        invisible &&
+        backgroundImage &&
+        mask
+    ){
 
 
         applyInvisibility(
@@ -356,7 +495,6 @@ async function render(){
 
 
 
-
     calculateFPS();
 
 
@@ -369,12 +507,14 @@ async function render(){
 
 
 
-
-
 /*
-    Replace person pixels
+    Apply Invisible Effect
 */
-function applyInvisibility(frame, mask, background){
+function applyInvisibility(
+    frame,
+    mask,
+    background
+){
 
 
     const data =
@@ -407,12 +547,13 @@ function applyInvisibility(frame, mask, background){
                 bg[i];
 
 
-            data[i + 1] =
-                bg[i + 1];
+            data[i+1] =
+                bg[i+1];
 
 
-            data[i + 2] =
-                bg[i + 2];
+            data[i+2] =
+                bg[i+2];
+
 
         }
 
@@ -424,11 +565,8 @@ function applyInvisibility(frame, mask, background){
 
 
 
-
-
-
 /*
-    FPS calculation
+    FPS
 */
 function calculateFPS(){
 
@@ -444,28 +582,21 @@ function calculateFPS(){
     if(now - lastTime >= 1000){
 
 
-        fps = frames;
+        fpsText.textContent =
+            frames;
 
 
         frames = 0;
 
 
-        lastTime = now;
-
-
-        fpsText.textContent =
-            fps;
+        lastTime =
+            now;
 
 
     }
 
 
 }
-
-
-
-
-
 
 
 /*
@@ -478,14 +609,15 @@ function screenshot(){
         document.createElement("a");
 
 
+
     link.download =
         "ghost-screenshot.png";
-
 
     link.href =
         canvas.toDataURL(
             "image/png"
         );
+
 
 
     link.click();
@@ -494,17 +626,16 @@ function screenshot(){
 }
 
 
-
 /*
     Buttons
 */
-startBtn.onclick =
-    startCamera;
+if(startBtn)
+    startBtn.onclick = startCamera;
 
 
-captureBtn.onclick =
-    captureBackground;
+if(captureBtn)
+    captureBtn.onclick = captureBackground;
 
 
-screenshotBtn.onclick =
-    screenshot;
+if(screenshotBtn)
+    screenshot.onclick = screenshot;

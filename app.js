@@ -117,20 +117,15 @@ async function startCamera(){
     }
     catch(error){
 
-        console.error(
-            "Camera error:",
-            error
-        );
+    console.error("FULL CAMERA ERROR:", error);
 
-
-        statusText.textContent =
-            "Camera error: " + error.message;
-
-    }
+    statusText.textContent =
+        "Camera error: " + 
+        (error.name || "Unknown") +
+        " - " +
+        (error.message || "No details");
 
 }
-
-
 
 
 

@@ -16,59 +16,106 @@ const statusText = document.getElementById("statusText");
 const fpsText = document.getElementById("fps");
 
 
-let stream;
+let stream = null;
 let running = false;
 
 let backgroundImage = null;
 let invisible = false;
 
-let segmentation;
-let hands;
+let segmentation = null;
+let hands = null;
 
 
 let lastTime = performance.now();
 let frames = 0;
-let fps = 0;
 
 
-/*
-    Start webcam
-*/
+let lastGesture = "";
+let gestureCooldown = false;
+
+
+
+// ==========================
+// START CAMERA
+// ==========================
+
 async function startCamera(){
 
-    if(!navigator.mediaDevices){
-
-        statusText.textContent =
-            "Browser does not support camera";
-
+    if(running){
         return;
-
     }
 
 
     try{
 
-        console.log("STEP 1: Starting camera");
+        console.log("STEP 1: Checking camera");
+
+
+        if(!navigator.mediaDevices){
+
+            throw new Error(
+                "Camera API not supported"
+            );
+
+        }
+
+
+        console.log(
+            "Secure Context:",
+            window.isSecureContext
+        );
+
 
         statusText.textContent =
-            "Requesting camera access...";
+            "Requesting camera permission...";
 
 
-        stream = await navigator.mediaDevices.getUserMedia({
 
-            video:true,
+        stream =
+        await navigator.mediaDevices.getUserMedia({
+
+            video:{
+                width:{
+                    ideal:1280
+                },
+
+                height:{
+                    ideal:720
+                },
+
+                facingMode:"user"
+            },
+
             audio:false
 
         });
 
 
-        console.log("STEP 2: Camera permission granted");
+
+        console.log(
+            "STEP 2: Camera permission granted"
+        );
+
 
 
         video.srcObject = stream;
 
 
+
+        await new Promise((resolve)=>{
+
+            video.onloadedmetadata = ()=>{
+
+                resolve();
+
+            };
+
+        });
+
+
+
         await video.play();
+
 
 
         console.log(
@@ -76,6 +123,7 @@ async function startCamera(){
             video.videoWidth,
             video.videoHeight
         );
+
 
 
         canvas.width =
@@ -86,47 +134,78 @@ async function startCamera(){
             video.videoHeight || 720;
 
 
-        console.log("STEP 4: Loading segmentation");
+
+
+        statusText.textContent =
+            "Loading AI models...";
+
+
+
+        console.log(
+            "STEP 4: Loading segmentation"
+        );
 
 
         segmentation =
             await initializeSegmentation();
 
 
-        console.log("STEP 5: Segmentation loaded");
+
+        console.log(
+            "STEP 5: Segmentation loaded"
+        );
+
 
 
         hands =
             await initializeHands();
 
 
-        console.log("STEP 6: Hands loaded");
+
+        console.log(
+            "STEP 6: Hands loaded"
+        );
+
 
 
         running = true;
+
 
 
         statusText.textContent =
             "Camera running";
 
 
+
         render();
 
 
     }
+
+
     catch(error){
 
+
         console.error(
-            "FAILED AT:",
+            "Camera Error:",
             error
         );
 
 
         statusText.textContent =
-            "ERROR: " +
-            error.name +
-            " | " +
-            error.message;
+            "Camera Error: " +
+            String(error);
+
+
+
+        if(stream){
+
+            stream
+            .getTracks()
+            .forEach(track=>track.stop());
+
+        }
+
 
     }
 
@@ -134,9 +213,10 @@ async function startCamera(){
 
 
 
-/*
-    Capture background
-*/
+// ==========================
+// CAPTURE BACKGROUND
+// ==========================
+
 function captureBackground(){
 
 
@@ -164,12 +244,12 @@ function captureBackground(){
 
 
 
-    const tctx =
+    const tempCtx =
         temp.getContext("2d");
 
 
 
-    tctx.drawImage(
+    tempCtx.drawImage(
 
         video,
 
@@ -186,7 +266,7 @@ function captureBackground(){
 
 
     backgroundImage =
-        tctx.getImageData(
+        tempCtx.getImageData(
 
             0,
 
@@ -208,11 +288,10 @@ function captureBackground(){
 
 
 
+// ==========================
+// RENDER LOOP
+// ==========================
 
-
-/*
-    Main rendering loop
-*/
 async function render(){
 
 
@@ -228,6 +307,7 @@ async function render(){
         return;
 
     }
+
 
 
 
@@ -247,7 +327,6 @@ async function render(){
 
 
 
-
     const frame =
         ctx.getImageData(
 
@@ -264,78 +343,117 @@ async function render(){
 
 
 
-    const mask =
-        await detectPerson(
-
-            segmentation,
-
-            video
-
-        );
+    try{
 
 
+        const mask =
+            await detectPerson(
 
+                segmentation,
 
-    const gesture =
-        await detectGesture(
+                video
 
-            hands,
-
-            video
-
-        );
+            );
 
 
 
+        const gesture =
+            await detectGesture(
 
-    if(gesture === "pinch"){
+                hands,
 
-        invisible = !invisible;
+                video
+
+            );
+
+
+
+
+        if(
+            gesture === "pinch" &&
+            lastGesture !== "pinch" &&
+            !gestureCooldown
+        ){
+
+
+            invisible =
+                !invisible;
+
+
+
+            gestureCooldown = true;
+
+
+            setTimeout(()=>{
+
+                gestureCooldown = false;
+
+            },1000);
+
+
+        }
+
+
+
+        lastGesture =
+            gesture;
+
+
+
+        if(
+            invisible &&
+            backgroundImage &&
+            mask
+        ){
+
+
+            applyInvisibility(
+
+                frame,
+
+                mask,
+
+                backgroundImage
+
+            );
+
+
+            ctx.putImageData(
+
+                frame,
+
+                0,
+
+                0
+
+            );
+
+
+            statusText.textContent =
+                "Invisible Mode ON";
+
+
+        }
+
+        else{
+
+
+            statusText.textContent =
+                "Normal Mode";
+
+
+        }
+
 
     }
 
 
+    catch(error){
 
-
-    if(invisible && backgroundImage){
-
-
-        applyInvisibility(
-
-            frame,
-
-            mask,
-
-            backgroundImage
-
+        console.error(
+            "Processing error:",
+            error
         );
-
-
-
-        ctx.putImageData(
-
-            frame,
-
-            0,
-
-            0
-
-        );
-
-
-
-        statusText.textContent =
-            "Invisible Mode ON";
-
-
-    }
-
-    else{
-
-
-        statusText.textContent =
-            "Normal Mode";
-
 
     }
 
@@ -345,7 +463,6 @@ async function render(){
     calculateFPS();
 
 
-
     requestAnimationFrame(render);
 
 
@@ -353,18 +470,19 @@ async function render(){
 
 
 
+// ==========================
+// INVISIBILITY EFFECT
+// ==========================
 
-
-
-/*
-    Replace person pixels
-*/
-function applyInvisibility(frame, mask, background){
+function applyInvisibility(
+    frame,
+    mask,
+    background
+){
 
 
     const data =
         frame.data;
-
 
 
     const bg =
@@ -372,16 +490,15 @@ function applyInvisibility(frame, mask, background){
 
 
 
-
     for(
-        let i = 0;
-        i < data.length;
-        i += 4
+        let i=0;
+        i<data.length;
+        i+=4
     ){
 
 
         const person =
-            mask[i / 4];
+            mask[i/4];
 
 
 
@@ -392,12 +509,13 @@ function applyInvisibility(frame, mask, background){
                 bg[i];
 
 
-            data[i + 1] =
-                bg[i + 1];
+            data[i+1] =
+                bg[i+1];
 
 
-            data[i + 2] =
-                bg[i + 2];
+            data[i+2] =
+                bg[i+2];
+
 
         }
 
@@ -409,12 +527,10 @@ function applyInvisibility(frame, mask, background){
 
 
 
+// ==========================
+// FPS
+// ==========================
 
-
-
-/*
-    FPS calculation
-*/
 function calculateFPS(){
 
 
@@ -426,20 +542,20 @@ function calculateFPS(){
 
 
 
-    if(now - lastTime >= 1000){
+    if(
+        now-lastTime >=1000
+    ){
 
 
-        fps = frames;
+        fpsText.textContent =
+            frames;
+
 
 
         frames = 0;
 
 
         lastTime = now;
-
-
-        fpsText.textContent =
-            fps;
 
 
     }
@@ -449,13 +565,10 @@ function calculateFPS(){
 
 
 
+// ==========================
+// SCREENSHOT
+// ==========================
 
-
-
-
-/*
-    Screenshot
-*/
 function screenshot(){
 
 
@@ -463,14 +576,17 @@ function screenshot(){
         document.createElement("a");
 
 
+
     link.download =
         "ghost-screenshot.png";
+
 
 
     link.href =
         canvas.toDataURL(
             "image/png"
         );
+
 
 
     link.click();
@@ -480,16 +596,24 @@ function screenshot(){
 
 
 
-/*
-    Buttons
-*/
-startBtn.onclick =
-    startCamera;
+
+// ==========================
+// BUTTON EVENTS
+// ==========================
+
+startBtn.addEventListener(
+    "click",
+    startCamera
+);
 
 
-captureBtn.onclick =
-    captureBackground;
+captureBtn.addEventListener(
+    "click",
+    captureBackground
+);
 
 
-screenshotBtn.onclick =
-    screenshot;
+screenshotBtn.addEventListener(
+    "click",
+    screenshot
+);

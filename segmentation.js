@@ -1,9 +1,7 @@
 import {
-    FilesetResolver,
-    ImageSegmenter
-} from
-from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21";
-
+  FilesetResolver,
+  ImageSegmenter
+} from "@mediapipe/tasks-vision";
 
 
 let segmenter = null;

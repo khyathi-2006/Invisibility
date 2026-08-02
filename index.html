@@ -44,33 +44,22 @@
 
 
 
-
     <div class="video-container">
 
 
-        <!-- Webcam input (hidden) -->
+        <!-- Webcam source -->
         <video
-
             id="video"
-
             autoplay
-
-            playsinline
-
             muted
-
-            style="display:none">
-
+            playsinline>
         </video>
-
 
 
 
         <!-- Processed output -->
         <canvas
-
             id="canvas">
-
         </canvas>
 
 
@@ -79,40 +68,27 @@
 
 
 
-
-
-
     <div class="controls">
 
 
         <button id="startBtn">
-
             Start Camera
-
         </button>
 
 
 
         <button id="captureBtn">
-
             Capture Background
-
         </button>
 
 
 
         <button id="screenshotBtn">
-
             Screenshot
-
         </button>
 
 
     </div>
-
-
-
-
 
 
 
@@ -125,9 +101,7 @@
             Status:
 
             <span id="statusText">
-
                 Waiting...
-
             </span>
 
         </div>
@@ -139,17 +113,13 @@
             FPS:
 
             <span id="fps">
-
                 0
-
             </span>
 
         </div>
 
 
     </div>
-
-
 
 
 
@@ -179,8 +149,7 @@
 
 
             <li>
-                Wait until status shows 
-                <b>Camera running</b>.
+                Wait until status shows <b>Camera running</b>.
             </li>
 
 

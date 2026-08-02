@@ -48,48 +48,34 @@ async function startCamera(){
 
     try{
 
+        console.log("STEP 1: Starting camera");
+
         statusText.textContent =
             "Requesting camera access...";
 
 
         stream = await navigator.mediaDevices.getUserMedia({
 
-            video:{
-                facingMode:"user",
-
-                width:{
-                    ideal:1280
-                },
-
-                height:{
-                    ideal:720
-                }
-            },
-
+            video:true,
             audio:false
 
         });
 
 
+        console.log("STEP 2: Camera permission granted");
+
 
         video.srcObject = stream;
 
 
-
-        await new Promise((resolve)=>{
-
-            video.onloadedmetadata = ()=>{
-
-                resolve();
-
-            };
-
-        });
-
-
-
         await video.play();
 
+
+        console.log(
+            "STEP 3: Video started",
+            video.videoWidth,
+            video.videoHeight
+        );
 
 
         canvas.width =
@@ -100,29 +86,28 @@ async function startCamera(){
             video.videoHeight || 720;
 
 
-
-        statusText.textContent =
-            "Loading AI models...";
-
+        console.log("STEP 4: Loading segmentation");
 
 
         segmentation =
             await initializeSegmentation();
 
 
+        console.log("STEP 5: Segmentation loaded");
+
 
         hands =
             await initializeHands();
 
 
+        console.log("STEP 6: Hands loaded");
+
 
         running = true;
 
 
-
         statusText.textContent =
             "Camera running";
-
 
 
         render();
@@ -131,17 +116,17 @@ async function startCamera(){
     }
     catch(error){
 
-        console.log("Camera error object:", error);
-
-        console.log(
-            "Camera error JSON:",
-            JSON.stringify(error)
+        console.error(
+            "FAILED AT:",
+            error
         );
 
 
         statusText.textContent =
-            "Camera Error: " +
-            String(error);
+            "ERROR: " +
+            error.name +
+            " | " +
+            error.message;
 
     }
 

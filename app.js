@@ -38,6 +38,14 @@ let fps = 0;
     Start webcam
 */
 async function startCamera(){
+    if(!navigator.mediaDevices){
+
+        statusText.textContent =
+            "Browser does not support camera";
+
+        return;
+
+    }
 
     try{
 
